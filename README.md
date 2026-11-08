@@ -1,48 +1,29 @@
-# Edge AI on RISC-V Vector Processor (CVA6 + Ara)
+# RISC-V Vector Edge AI Acceleration (CVA6 + Ara)
 
-This repository contains the codebase, research documentation, and experiments for the thesis:
-> **"Model- and Kernel-Level Optimization of Quantized Edge AI Inference on an Open-Source RISC-V Vector Processor"**
-
-Imported from conversation: [Thesis Ideation & Environment Setup](conversation://6ea18a81-cca2-426e-837c-a8bde090512f).
+An open-source performance benchmarking and co-design project evaluating quantized (`int8`) deep neural network inference on an open-source RISC-V Vector coprocessor.
 
 ---
 
 ## 📌 Project Overview
 
-- **Context & Domain:** Hardware/Software co-design for Edge AI using open-source RISC-V microarchitecture.
-- **Background:** IC design (L2 Cache, Vector Load/Store Unit - VLSU, and E-Trace in RISC-V cores).
-- **Core Architecture:** [CVA6](https://github.com/openhwgroup/cva6) (64-bit application-class RISC-V core) coupled with [PULP Ara](https://github.com/pulp-platform/ara) (RVV 1.0 vector coprocessor).
-- **Simulation Platform:** Cycle-accurate RTL simulation with **Verilator**, supplemented by Spike ISA simulator.
+Edge AI applications such as always-on keyword spotting, wearable biometric monitoring, and edge computer vision require low-latency, energy-efficient inference under strict compute and power budgets. 
+
+This project explores model- and kernel-level optimizations of quantized neural networks targeting the open-source **[CVA6](https://github.com/openhwgroup/cva6)** 64-bit application-class processor coupled with the **[PULP Ara](https://github.com/pulp-platform/ara)** vector coprocessor (RISC-V Vector Extension v1.0).
+
+### Key Objectives
+- **Quantization Optimization:** Train edge models (MLPerf Tiny benchmark suite) using Int8 Quantization-Aware Training (QAT).
+- **Handcrafted RVV 1.0 Kernels:** Implement vector-optimized kernels (Depthwise Conv2D, Pointwise Conv 1x1, GEMV) leveraging widening multiply-accumulates and vector register groups (LMUL sweeps).
+- **Architectural Bottleneck Profiling:** Characterize memory bandwidth, vector lane utilization, and execution latency using cycle-accurate RTL simulation with Verilator.
+- **Analytical & Predictive Modeling:** Formulate regression cost models to predict optimal loop tiling and LMUL configurations without exhaustive cycle-accurate simulation.
 
 ---
 
-## 🗂️ Documentation & Milestones
+## 🏛️ Architecture & Platform
 
-1. **[Thesis Abstract](docs/ABSTRACT.md)**: Ready-to-submit abstract (< 200 words) for the professor (2-week deadline).
-2. **[Thesis Proposal & Roadmap](docs/THESIS_PROPOSAL.md)**:
-   - **Phase 1 (2-Week Short Thesis):** Model- and kernel-level optimization of int8 quantized edge AI models (DS-CNN, ResNet-8 from MLPerf Tiny), sweeping loop tiling, data layout, and LMUL configurations with a regression-based cost model.
-   - **Phase 2 (Master's Thesis RTL Co-Design):** Sparsity- and quantization-aware hardware co-design (custom sparse/compressed loads in Ara VLSU, LLC prefetching, and PPA analysis on ASAP7).
-3. **[Environment Setup & Status](docs/ENVIRONMENT_SETUP.md)**: Complete record of WSL2 (Ubuntu 22.04 LTS), toolchain dependencies, swap configuration, and build steps.
-
----
-
-## 🚀 Environment Quick Start
-
-The host environment runs on Windows 11 with **WSL2 (Ubuntu 22.04 LTS)**.
-
-```bash
-# Inside WSL2 (Ubuntu 22.04):
-# 1. Enter the project directory on Drive D:
-cd "/mnt/d/AI Thesis/ara"
-
-# 2. Build Verilator (pinned version in Ara repo)
-make verilator
-
-# 3. Build Spike and the RISC-V Vector LLVM Toolchain
-make riscv-isa-sim
-make toolchain-llvm
-```
-*(Helper scripts are available in the `scripts/` directory).*
+- **Core:** CVA6 (64-bit RISC-V `rv64gcv` application core, SV39 MMU).
+- **Vector Coprocessor:** PULP Ara (RVV 1.0 compliant coprocessor with 4 vector lanes, VLEN = 4096 bits).
+- **Memory Subsystem:** AXI bus interface bypassing L1 to connect directly to L2/LLC memory.
+- **Toolchain:** LLVM/Clang (RVV 1.0 intrinsics), Spike ISA simulator, and Verilator 5.047.
 
 ---
 
@@ -50,12 +31,53 @@ make toolchain-llvm
 
 ```text
 ├── docs/
-│   ├── ABSTRACT.md            # Submitted 2-week thesis abstract
-│   ├── THESIS_PROPOSAL.md     # Full proposal, research questions & methodology
-│   └── ENVIRONMENT_SETUP.md   # Setup status, tool versions, and instructions
+│   ├── PROJECT_OVERVIEW.md       # Technical summary, benchmarks & evaluation plan
+│   ├── ARCHITECTURE_ROADMAP.md   # Architectural design, memory hierarchy & roadmap
+│   └── ENVIRONMENT_SETUP.md      # Toolchain build guide, WSL2 setup & reproducibility
 ├── scripts/
-│   └── setup_ara.sh           # Automated script for WSL setup and builds
-├── models/                    # PyTorch / Brevitas training scripts (MLPerf Tiny)
-├── kernels/                   # Custom RVV 1.0 C/assembly kernels
+│   ├── run_as_owi.sh             # WSL2 environment wrapper
+│   ├── run_sim.sh                # Verilator simulation runner
+│   ├── setup_ara.sh              # Ara & toolchain setup automation
+│   └── build_*.sh                # Individual toolchain build scripts
+├── models/
+│   ├── README.md                 # MLPerf Tiny model definitions
+│   └── ds_cnn_quant.py           # PyTorch DS-CNN with int8 symmetric quantization
+├── kernels/
+│   ├── README.md                 # RVV 1.0 kernel specifications
+│   ├── depthwise_conv2d_int8.c   # Int8 3x3 depthwise convolution (RVV 1.0)
+│   ├── edge_ai_bench.h           # Kernel headers and golden reference signatures
+│   └── edge_ai_bench.c           # Vectorized Depthwise, Pointwise, and GEMV kernels
 └── README.md
 ```
+
+---
+
+## 🚀 Quick Start & Reproduction
+
+### Prerequisites
+- OS: Linux or Windows 11 with WSL2 (Ubuntu 22.04 LTS).
+- System Dependencies: GCC, Clang, CMake, Ninja, Device-Tree-Compiler, Python 3.10+, PyTorch.
+
+### 1. Build Hardware & Toolchains
+Follow the step-by-step instructions in [`docs/ENVIRONMENT_SETUP.md`](docs/ENVIRONMENT_SETUP.md):
+```bash
+# Clone and build toolchain (Verilator, Spike, RVV LLVM)
+bash scripts/setup_ara.sh
+```
+
+### 2. Run Edge AI Simulation
+Execute the edge AI kernel suite on the cycle-accurate CVA6 + Ara Verilator model:
+```bash
+# Inside WSL2
+bash scripts/run_as_owi.sh scripts/run_sim.sh edge_ai_kernels
+```
+
+---
+
+## 📊 Workloads (MLPerf Tiny)
+
+| Task | Target Model | Dataset | Quantization | Primary Hardware Stress |
+| :--- | :--- | :--- | :--- | :--- |
+| **Keyword Spotting** | DS-CNN (Depthwise Separable CNN) | Speech Commands | Int8 (QAT) | Vector memory bandwidth, small spatial tiling |
+| **Image Classification** | ResNet-8 | CIFAR-10 | Int8 (QAT) | Cache reuse, 3x3 channel-tiled convolution |
+| **Edge Anomaly Detection** | FC Autoencoder | ToyADMOS | Int8 | Matrix-vector linear projection throughput |
