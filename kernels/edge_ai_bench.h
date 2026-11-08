@@ -8,27 +8,25 @@
 extern "C" {
 #endif
 
-// Depthwise Conv2D 3x3 Int8 with configurable LMUL (1, 2, 4)
+// Depthwise Conv2D 3x3 Int8 (NCHW & NHWC)
 void depthwise_conv2d_3x3_int8_m1(int8_t *out, const int8_t *in, const int8_t *weight,
                                  int64_t C, int64_t H_in, int64_t W_in);
-void depthwise_conv2d_3x3_int8_m2(int8_t *out, const int8_t *in, const int8_t *weight,
-                                 int64_t C, int64_t H_in, int64_t W_in);
-void depthwise_conv2d_3x3_int8_m4(int8_t *out, const int8_t *in, const int8_t *weight,
-                                 int64_t C, int64_t H_in, int64_t W_in);
+void depthwise_conv2d_3x3_int8_nhwc_m2(int8_t *out, const int8_t *in, const int8_t *weight,
+                                      int64_t C, int64_t H_in, int64_t W_in);
 
-// Pointwise Conv2D 1x1 Int8 with configurable LMUL (1, 2, 4)
+// Pointwise Conv2D 1x1 Int8
 void pointwise_conv2d_1x1_int8_m2(int8_t *out, const int8_t *in, const int8_t *weight,
-                                 int64_t C_in, int64_t C_out, int64_t HW);
-void pointwise_conv2d_1x1_int8_m4(int8_t *out, const int8_t *in, const int8_t *weight,
                                  int64_t C_in, int64_t C_out, int64_t HW);
 
 // Fully Connected (GEMV) Int8
 void fc_int8_m4(int8_t *out, const int8_t *in, const int8_t *weight,
                 int64_t in_features, int64_t out_features);
 
-// Scalar Golden reference models for automated verification
+// Golden Reference Models
 void golden_depthwise_conv2d_3x3_int8(int8_t *out, const int8_t *in, const int8_t *weight,
                                       int64_t C, int64_t H_in, int64_t W_in);
+void golden_depthwise_conv2d_3x3_int8_nhwc(int8_t *out, const int8_t *in, const int8_t *weight,
+                                           int64_t C, int64_t H_in, int64_t W_in);
 void golden_pointwise_conv2d_1x1_int8(int8_t *out, const int8_t *in, const int8_t *weight,
                                       int64_t C_in, int64_t C_out, int64_t HW);
 void golden_fc_int8(int8_t *out, const int8_t *in, const int8_t *weight,
