@@ -70,7 +70,19 @@ class AraRegressionCostModel:
 
             # Fully Connected GEMV (In=64, Out=12), LMUL=4: In=64 vector dimension
             {"type": "fc", "macs": 64 * 12, "bytes": 64 + 64*12 + 12, 
-             "lmul": 4, "is_nhwc": 0, "dim_vec": 64, "cycles_scalar": 7719, "cycles_rvv": 1466},
+             "lmul": 4, "is_nhwc": 0, "dim_vec": 64, "cycles_scalar": 7686, "cycles_rvv": 1486},
+
+            # Standard Conv2D 3x3 NHWC (Cin=8, Cout=8, H=10, W=10), LMUL=2
+            {"type": "conv3x3", "macs": 8 * 8 * 64 * 9, "bytes": 8*10*10 + 9*8*8 + 8*8*8,
+             "lmul": 2, "is_nhwc": 1, "dim_vec": 8, "cycles_scalar": 398165, "cycles_rvv": 170587},
+
+            # Residual Addition Int8 (Size=512), LMUL=4
+            {"type": "add", "macs": 512, "bytes": 512 * 3,
+             "lmul": 4, "is_nhwc": 0, "dim_vec": 512, "cycles_scalar": 8824, "cycles_rvv": 255},
+
+            # Global Average Pooling Int8 (C=16, HW=64), LMUL=2
+            {"type": "avgpool", "macs": 16 * 64, "bytes": 16 * 64 + 16,
+             "lmul": 2, "is_nhwc": 1, "dim_vec": 16, "cycles_scalar": 6908, "cycles_rvv": 1691},
 
             # Intermediate synthetic calibration points adhering to Ara lane scaling
             {"type": "pw", "macs": 32 * 32 * 184, "bytes": 32*184 + 32*32 + 32*184, 
