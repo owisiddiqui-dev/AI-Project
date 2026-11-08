@@ -1,0 +1,22 @@
+# Upstream Ara repository (reproduced via scripts/setup_ara.sh)
+ara/
+
+# Build artifacts and logs
+*.log
+*.o
+*.a
+*.so
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+
+# Editor and OS metadata
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
